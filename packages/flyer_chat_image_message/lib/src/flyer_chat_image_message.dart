@@ -162,8 +162,12 @@ class _FlyerChatImageMessageState extends State<FlyerChatImageMessage>
     _imageProvider = _targetProvider;
 
     if (width == null || height == null) {
+      final request = _imageRequest;
       getImageDimensions(_imageProvider).then((dimensions) {
-        if (mounted) {
+        // Skip if the source changed or an update supplied the size meanwhile.
+        if (mounted &&
+            request == _imageRequest &&
+            (widget.message.width == null || widget.message.height == null)) {
           _aspectRatio = dimensions.$1 / dimensions.$2;
           _chatController.updateMessage(
             widget.message,

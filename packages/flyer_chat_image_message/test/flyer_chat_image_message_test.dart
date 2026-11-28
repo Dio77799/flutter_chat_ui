@@ -100,4 +100,29 @@ void main() {
 
     expect(tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio, 1);
   });
+
+  testWidgets('keeps the size of a new image when the first lookup ends late', (
+    tester,
+  ) async {
+    final unsized = _message(source: 'a');
+    final controller = InMemoryChatController(messages: [unsized]);
+    addTearDown(controller.dispose);
+    final first = MemoryImage(Uint8List.fromList(transparentImage));
+    final second = MemoryImage(Uint8List.fromList(transparentImage));
+
+    await tester.pumpWidget(_wrap(controller, unsized, first));
+    // Replace the image before the lookup for the first one finishes.
+    await tester.pumpWidget(
+      _wrap(controller, _message(source: 'b', width: 100, height: 200), second),
+    );
+    await _settleImages(tester);
+
+    // The lookup for the first image must not save its size on the new one.
+    final saved = controller.messages.single as ImageMessage;
+    expect((saved.width, saved.height), (null, null));
+    expect(
+      tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio,
+      0.5,
+    );
+  });
 }
